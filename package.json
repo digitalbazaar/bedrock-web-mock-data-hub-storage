@@ -1,0 +1,28 @@
+{
+  "name": "bedrock-web-mock-private-remote-storage",
+  "version": "0.1.0-0",
+  "description": "Mock private remote storage for Bedrock Web apps",
+  "main": "index.js",
+  "peerDependencies": {
+    "axios-mock-adapter": "^1.15.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/digitalbazaar/bedrock-web-mock-private-remote-storage"
+  },
+  "keywords": [
+    "bedrock"
+  ],
+  "author": {
+    "name": "Digital Bazaar, Inc.",
+    "email": "support@digitalbazaar.com",
+    "url": "https://digitalbazaar.com"
+  },
+  "bugs": {
+    "url": "https://github.com/digitalbazaar/bedrock-web-mock-private-remote-storage/issues"
+  },
+  "homepage": "https://github.com/digitalbazaar/bedrock-web-mock-private-remote-storage",
+  "bedrock": {
+    "browserDependencies": "all"
+  }
+}
