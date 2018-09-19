@@ -1,6 +1,6 @@
 {
   "name": "bedrock-web-mock-private-remote-storage",
-  "version": "0.1.1-0",
+  "version": "1.0.0",
   "description": "Mock private remote storage for Bedrock Web apps",
   "main": "index.js",
   "peerDependencies": {
