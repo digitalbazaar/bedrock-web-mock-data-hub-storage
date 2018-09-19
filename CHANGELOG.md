@@ -1,6 +1,6 @@
 # bedrock-web-mock-private-remote-storage ChangeLog
 
-## 0.0.0 - 2018-xx-xx
+## 0.1.0 - 2018-09-19
 
 ### Added
 - Add core files.
