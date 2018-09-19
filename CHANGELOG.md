@@ -1,5 +1,7 @@
 # bedrock-web-mock-private-remote-storage ChangeLog
 
+## 1.0.0 - 2018-09-19
+
 ## 0.1.0 - 2018-09-19
 
 ### Added
