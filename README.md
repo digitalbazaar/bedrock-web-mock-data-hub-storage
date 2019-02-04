@@ -1,2 +1,2 @@
-# bedrock-web-mock-private-remote-storage
-Mock private remote storage for testing Bedrock Web apps
+# bedrock-web-mock-data-hub-storage
+Mock Web-based Bedrock Data Hub Storage
