@@ -1,4 +1,4 @@
-# bedrock-web-mock-private-remote-storage ChangeLog
+# bedrock-web-mock-data-hub-storage ChangeLog
 
 ## 1.0.0 - 2018-09-19
 

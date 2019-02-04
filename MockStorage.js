@@ -14,7 +14,7 @@ export class MockStorage {
     };
     this.mockAdapter = mockAdapter;
 
-    const root = `/private-storage/${accountId}`;
+    const root = `/data-hub/${accountId}`;
     const routes = {
       documents: `${root}/documents`,
       masterKey: `${root}/master-key`,
@@ -50,7 +50,7 @@ export class MockStorage {
     });
 
     const docIdRoute = new RegExp(
-      `/private-storage/${accountId}/documents/([-_A-Za-z0-9]+)`);
+      `/data-hub/${accountId}/documents/([-_A-Za-z0-9]+)`);
 
     mockAdapter.onPut(docIdRoute).reply(config => {
       const encryptedDoc = JSON.parse(config.data);

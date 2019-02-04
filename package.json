@@ -1,5 +1,5 @@
 {
-  "name": "bedrock-web-mock-private-remote-storage",
+  "name": "bedrock-web-mock-data-hub-storage",
   "version": "1.0.1-0",
   "description": "Mock private remote storage for Bedrock Web apps",
   "main": "index.js",
@@ -8,7 +8,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/digitalbazaar/bedrock-web-mock-private-remote-storage"
+    "url": "https://github.com/digitalbazaar/bedrock-web-mock-data-hub-storage"
   },
   "keywords": [
     "bedrock"
@@ -19,9 +19,9 @@
     "url": "https://digitalbazaar.com"
   },
   "bugs": {
-    "url": "https://github.com/digitalbazaar/bedrock-web-mock-private-remote-storage/issues"
+    "url": "https://github.com/digitalbazaar/bedrock-web-mock-data-hub-storage/issues"
   },
-  "homepage": "https://github.com/digitalbazaar/bedrock-web-mock-private-remote-storage",
+  "homepage": "https://github.com/digitalbazaar/bedrock-web-mock-data-hub-storage",
   "bedrock": {
     "browserDependencies": "all"
   }
