@@ -1,86 +1,124 @@
 /*!
- * Copyright (c) 2018 Digital Bazaar, Inc. All rights reserved.
+ * Copyright (c) 2018-2019 Digital Bazaar, Inc. All rights reserved.
  */
 'use strict';
 
+import uuid from 'uuid-random';
+
 export class MockStorage {
-  constructor({accountId, mockAdapter}) {
-    this.accountId = accountId;
-    this.masterKey = null;
+  constructor({mockAdapter}) {
+    this.dataHubs = new Map();
     this.documents = new Map();
-    this.indexes = {
-      equals: new Map(),
-      has: new Map()
-    };
+    this.indexes = new Map();
     this.mockAdapter = mockAdapter;
 
-    const root = `/data-hub/${accountId}`;
+    const root = '/data-hubs';
     const routes = {
-      documents: `${root}/documents`,
-      masterKey: `${root}/master-key`,
-      query: `${root}/query`
+      dataHubs: root,
+      dataHub: new RegExp(`${root}/([-A-Za-z0-9]+)`),
+      documents: new RegExp(`${root}/([-A-Za-z0-9]+)/documents`),
+      document: new RegExp(`${root}/([-A-Za-z0-9]+)/documents/([-A-Za-z0-9]+)`),
+      dataHub: new RegExp(`${root}/([-A-Za-z0-9]+)/query`)
     };
 
-    mockAdapter.onPut(routes.masterKey).reply(config => {
-      // TODO: check headers for `If-None-Match: *`
-      // TODO: support replacing master key?
-      if(this.masterKey) {
-        return [304];
-      }
-      this.masterKey = JSON.parse(config.data);
-      return [204];
+    // create a new data hub
+    mockAdapter.onPost(routes.dataHubs).reply(request => {
+      const config = JSON.parse(request.data);
+      // TODO: validate `config`
+      config.id = uuid();
+      this.dataHubs.set(config.id, {
+        config,
+        documents: new Map(),
+        indexes: {
+          equals: new Map(),
+          has: new Map()
+        }
+      });
+      const location = `http://localhost:9876/${root}/${config.id}`;
+      return [200, JSON.stringify(config), {location}];
     });
 
-    mockAdapter.onGet(routes.masterKey).reply(() => {
-      if(!this.masterKey) {
+    // insert a document into a data hub
+    mockAdapter.onPost(routes.documents).reply(request => {
+      const [, dataHubId] = request.url.match(routes.documents);
+      const dataHub = this.dataHubs.get(dataHubId);
+      if(!dataHub) {
+        // data hub does not exist
         return [404];
       }
-      return [200, JSON.stringify(this.masterKey)];
-    });
 
-    mockAdapter.onPost(routes.documents).reply(config => {
-      const encryptedDoc = JSON.parse(config.data);
-      if(this.documents.has(encryptedDoc.id)) {
+      const doc = JSON.parse(request.data);
+      if(this.dataHub.has(doc.id)) {
         return [409];
       }
-      this.store(encryptedDoc);
+      this.store(dataHub, doc);
       const location =
-        `http://localhost:9876/${routes.documents}/${encryptedDoc.id}`;
+        `http://localhost:9876/${root}/${dataHubId}/documents/${doc.id}`;
       return [201, undefined, {location}];
     });
 
-    const docIdRoute = new RegExp(
-      `/data-hub/${accountId}/documents/([-_A-Za-z0-9]+)`);
+    mockAdapter.onPost(routes.document).reply(request => {
+      const [, dataHubId, docId] = request.url.match(routes.document);
+      const dataHub = this.dataHubs.get(dataHubId);
+      if(!dataHub) {
+        // data hub does not exist
+        return [404];
+      }
 
-    mockAdapter.onPut(docIdRoute).reply(config => {
-      const encryptedDoc = JSON.parse(config.data);
-      const [, id] = config.url.match(docIdRoute);
-      if(id !== encryptedDoc.id) {
+      const doc = JSON.parse(request.data);
+      if(docId !== doc.id) {
         return [400];
       }
-      this.store(encryptedDoc);
+      this.store(dataHub, doc);
       return [200];
     });
 
-    mockAdapter.onGet(docIdRoute).reply(config => {
-      const [, id] = config.url.match(docIdRoute);
-      if(!this.documents.has(id)) {
+    mockAdapter.onGet(routes.document).reply(request => {
+      const [, dataHubId, docId] = request.url.match(routes.document);
+      const dataHub = this.dataHubs.get(dataHubId);
+      if(!dataHub) {
+        // data hub does not exist
         return [404];
       }
-      return [200, JSON.stringify(this.documents.get(id))];
+
+      const doc = dataHub.documents.get(docId);
+      if(!doc) {
+        return [404];
+      }
+      return [200, JSON.stringify(doc)];
     });
 
-    mockAdapter.onDelete(docIdRoute).reply(config => {
-      const [, id] = config.url.match(docIdRoute);
-      if(!this.documents.has(id)) {
+    mockAdapter.onDelete(routes.document).reply(request => {
+      const [, dataHubId, docId] = request.url.match(routes.document);
+      const dataHub = this.dataHubs.get(dataHubId);
+      if(!dataHub) {
+        // data hub does not exist
         return [404];
       }
-      this.documents.delete(id);
+
+      if(!dataHub.documents.has(docId)) {
+        return [404];
+      }
+      dataHub.documents.delete(docId);
       return [204];
     });
 
-    mockAdapter.onPost(routes.query).reply(config => {
-      const query = JSON.parse(config.data);
+    mockAdapter.onPost(routes.query).reply(request => {
+      const [, dataHubId] = request.url.match(routes.documents);
+      const dataHub = this.dataHubs.get(dataHubId);
+      if(!dataHub) {
+        // data hub does not exist
+        return [404];
+      }
+
+      const query = JSON.parse(request.data);
+      const index = dataHub.indexes[query.index];
+      if(!index) {
+        // index does not exist
+        return [404];
+      }
+
+      // build results
       const results = [];
       if(query.equals) {
         for(const equals of query.equals) {
@@ -88,7 +126,7 @@ export class MockStorage {
           for(const key in equals) {
             const value = equals[key];
             const docs = this.find(
-              {index: this.indexes.equals, key: key + '=' + value});
+              {index: dataHub.indexes.equals, key: key + '=' + value});
             if(!matches) {
               // first result
               matches = docs;
@@ -111,7 +149,7 @@ export class MockStorage {
       if(query.has) {
         let matches = null;
         for(const key of query.has) {
-          const docs = this.find({index: this.indexes.has, key});
+          const docs = dataHub.find({index: this.indexes.has, key});
           if(!matches) {
             // first result
             matches = docs;
@@ -130,29 +168,39 @@ export class MockStorage {
     });
   }
 
-  store(encryptedDoc) {
-    this.documents.set(encryptedDoc.id, encryptedDoc);
-    for(const attribute of encryptedDoc.attributes) {
-      this.addToIndex({
-        index: this.indexes.equals,
-        key: attribute.name + '=' + attribute.value,
-        encryptedDoc
-      });
-      this.addToIndex({
-        index: this.indexes.has,
-        key: attribute.name,
-        encryptedDoc
-      });
+  store(dataHub, doc) {
+    dataHub.documents.set(doc.id, doc);
+    for(const entry of doc.indexed) {
+      let index = dataHub.indexes[entry.hmac.id];
+      if(!index) {
+        index = {
+          equals: new Map(),
+          has: new Map()
+        };
+        dataHub.indexes.set(entry.hmac.id, index);
+      }
+      for(const attribute of entry.attributes) {
+        this.addToIndex({
+          index: index.equals,
+          key: attribute.name + '=' + attribute.value,
+          doc
+        });
+        this.addToIndex({
+          index: index.has,
+          key: attribute.name,
+          doc
+        });
+      }
     }
   }
 
-  addToIndex({index, key, encryptedDoc}) {
+  addToIndex({index, key, doc}) {
     let docSet = index.get(key);
     if(!docSet) {
       docSet = new Set();
       index.set(key, docSet);
     }
-    docSet.add(encryptedDoc);
+    docSet.add(doc);
   }
 
   find({index, key}) {

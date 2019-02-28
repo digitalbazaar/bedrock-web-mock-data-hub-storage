@@ -1,0 +1,8 @@
+{
+  "globals": {
+    "crypto": true,
+    "TextDecoder": true,
+    "TextEncoder": true,
+    "Uint8Array": true
+  }
+}
