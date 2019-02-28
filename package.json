@@ -24,5 +24,8 @@
   "homepage": "https://github.com/digitalbazaar/bedrock-web-mock-data-hub-storage",
   "bedrock": {
     "browserDependencies": "all"
+  },
+  "dependencies": {
+    "uuid-random": "^1.0.6"
   }
 }
