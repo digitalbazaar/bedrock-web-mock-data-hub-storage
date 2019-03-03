@@ -8,6 +8,7 @@ import uuid from 'uuid-random';
 export class MockStorage {
   constructor({server}) {
     this.dataHubs = new Map();
+    this.primaryHubs = new Map();
     this.documents = new Map();
 
     const root = '/data-hubs';
@@ -30,8 +31,40 @@ export class MockStorage {
       };
       this.dataHubs.set(config.id, dataHub);
       this.mapDocumentHandlers({server, dataHub});
+      if(config.primary) {
+        const primaryHub = this.primaryHubs.get(config.controller);
+        if(primaryHub) {
+          return [409];
+        }
+        this.primaryHubs.set(config.controller, dataHub);
+      }
       const location = `http://localhost:9876/${root}/${config.id}`;
       return [200, {location, json: true}, config];
+    });
+
+    // get data hubs by query
+    server.get(routes.dataHubs, request => {
+      const {controller, primary} = request.queryParams;
+      if(primary !== 'true') {
+        // query for all data hubs controlled by controller not implemented yet
+        // TODO: implement
+        return [500, {json: true}, new Error('Not implemented.')];
+      }
+      const primaryHub = this.primaryHubs.get(controller);
+      if(!primaryHub) {
+        return [200, {json: true}, []];
+      }
+      return [200, {json: true}, [primaryHub.config]];
+    });
+
+    // get a data hub
+    server.get(routes.dataHub, request => {
+      const {dataHubId} = request.params;
+      const dataHub = this.dataHubs.get(dataHubId);
+      if(!dataHub) {
+        return [404];
+      }
+      return [200, {json: true}, dataHub.config];
     });
 
     // insert a document into a data hub
