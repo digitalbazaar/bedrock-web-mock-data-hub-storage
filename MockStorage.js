@@ -15,7 +15,7 @@ export class MockStorage {
       dataHubs: root,
       dataHub: `${root}/:dataHubId`,
       documents: `${root}/:dataHubId/documents`,
-      dataHub: `${root}/:dataHubId/query`
+      query: `${root}/:dataHubId/query`
     };
 
     // create a new data hub
@@ -63,7 +63,7 @@ export class MockStorage {
       }
 
       const query = JSON.parse(request.requestBody);
-      const index = dataHub.indexes[query.index];
+      const index = dataHub.indexes.get(query.index);
       if(!index) {
         // index does not exist
         return [404];
@@ -122,7 +122,7 @@ export class MockStorage {
   store({dataHub, doc}) {
     dataHub.documents.set(doc.id, doc);
     for(const entry of doc.indexed) {
-      let index = dataHub.indexes[entry.hmac.id];
+      let index = dataHub.indexes.get(entry.hmac.id);
       if(!index) {
         index = {
           equals: new Map(),
