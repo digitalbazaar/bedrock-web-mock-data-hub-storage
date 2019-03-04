@@ -39,7 +39,7 @@ export class MockStorage {
         this.primaryHubs.set(config.controller, dataHub);
       }
       const location = `http://localhost:9876/${root}/${config.id}`;
-      return [200, {location, json: true}, config];
+      return [201, {location, json: true}, config];
     });
 
     // get data hubs by query
@@ -207,7 +207,7 @@ export class MockStorage {
         return [400];
       }
       this.store({dataHub, doc});
-      return [200];
+      return [204];
     });
 
     // get a document
