@@ -80,7 +80,11 @@ export class MockStorage {
       if(dataHub.documents.has(doc.id)) {
         return [409];
       }
-      this.store({dataHub, doc});
+      try {
+        this.store({dataHub, doc, create: true});
+      } catch(e) {
+        return [409];
+      }
       const location =
         `http://localhost:9876/${root}/${dataHubId}/documents/${doc.id}`;
       return [201, {location}];
@@ -152,7 +156,26 @@ export class MockStorage {
     });
   }
 
-  store({dataHub, doc}) {
+  store({dataHub, doc, create = false}) {
+    if(create) {
+      // check uniqueness constraint
+      for(const entry of doc.indexed) {
+        const index = dataHub.indexes.get(entry.hmac.id);
+        if(!index) {
+          continue;
+        }
+        for(const attribute of entry.attributes) {
+          if(!attribute.unique) {
+            continue;
+          }
+          const key = attribute.name + '=' + attribute.value;
+          if(index.equals.has(key)) {
+            throw new Error('Duplicate error.');
+          }
+        }
+      }
+    }
+
     dataHub.documents.set(doc.id, doc);
     for(const entry of doc.indexed) {
       let index = dataHub.indexes.get(entry.hmac.id);
@@ -167,7 +190,8 @@ export class MockStorage {
         this.addToIndex({
           index: index.equals,
           key: attribute.name + '=' + attribute.value,
-          doc
+          doc,
+          unique: attribute.unique
         });
         this.addToIndex({
           index: index.has,
@@ -178,11 +202,14 @@ export class MockStorage {
     }
   }
 
-  addToIndex({index, key, doc}) {
+  addToIndex({index, key, doc, unique = false}) {
     let docSet = index.get(key);
     if(!docSet) {
       docSet = new Set();
       index.set(key, docSet);
+    }
+    if(unique) {
+      docSet.clear();
     }
     docSet.add(doc);
   }
@@ -222,6 +249,7 @@ export class MockStorage {
 
     // delete a document
     server.delete(route, request => {
+      // TODO: update indexes
       const {docId} = request.params;
       if(!dataHub.documents.has(docId)) {
         return [404];
