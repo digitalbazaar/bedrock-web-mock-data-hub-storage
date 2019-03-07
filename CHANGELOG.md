@@ -1,6 +1,6 @@
 # bedrock-web-mock-data-hub-storage ChangeLog
 
-## 2.0.0 - 2019-03-xx
+## 2.0.0 - 2019-03-07
 
 ### Changed
 - **BREAKING**: Entirely new API and implementation.
