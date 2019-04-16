@@ -214,6 +214,29 @@ export class MockStorage {
     docSet.add(doc);
   }
 
+  unindex({dataHub, doc}) {
+    for(const entry of doc.indexed) {
+      const index = dataHub.indexes.get(entry.hmac.id);
+      for(const attribute of entry.attributes) {
+        this.removeFromIndex({
+          index: index.equals,
+          key: attribute.name + '=' + attribute.value
+        });
+        this.removeFromIndex({
+          index: index.has,
+          key: attribute.name
+        });
+      }
+    }
+  }
+
+  removeFromIndex({index, key}) {
+    let docSet = index.get(key);
+    if(docSet) {
+      index.delete(key);
+    }
+  }
+
   find({index, key}) {
     const docSet = index.get(key);
     if(!docSet) {
@@ -249,11 +272,12 @@ export class MockStorage {
 
     // delete a document
     server.delete(route, request => {
-      // TODO: update indexes
       const {docId} = request.params;
       if(!dataHub.documents.has(docId)) {
         return [404];
       }
+      const doc = dataHub.documents.get(docId);
+      this.unindex({dataHub, doc});
       dataHub.documents.delete(docId);
       return [204];
     });
