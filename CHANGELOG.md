@@ -1,5 +1,10 @@
 # bedrock-web-mock-data-hub-storage ChangeLog
 
+## 2.0.1 - 2019-xx-xx
+
+### Changed
+- Ensure indexes are removed upon deletion.
+
 ## 2.0.0 - 2019-03-07
 
 ### Changed
